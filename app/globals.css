@@ -1,0 +1,151 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --dd-bg: #fafaf7;
+  --dd-surface: #ffffff;
+  --dd-surface-2: #f1eee6;
+  --dd-ink: #16181a;
+  --dd-ink-muted: rgba(22, 24, 26, 0.6);
+  --dd-ink-faint: rgba(22, 24, 26, 0.4);
+  --dd-border: rgba(22, 24, 26, 0.11);
+  --dd-border-strong: rgba(22, 24, 26, 0.24);
+  --dd-teal: #0f6e56;
+  --dd-teal-soft: rgba(15, 110, 86, 0.1);
+  --dd-amber: #ba7517;
+  --dd-amber-soft: rgba(186, 117, 23, 0.12);
+  --dd-crimson: #a32d2d;
+  --dd-crimson-soft: rgba(163, 45, 45, 0.1);
+  --dd-shadow: 0 12px 34px rgba(22, 24, 26, 0.11), 0 2px 8px rgba(22, 24, 26, 0.05);
+}
+
+:root[data-theme="dark"] {
+  --dd-bg: #141412;
+  --dd-surface: #1d1d19;
+  --dd-surface-2: #27261f;
+  --dd-ink: #f4f2ea;
+  --dd-ink-muted: rgba(244, 242, 234, 0.62);
+  --dd-ink-faint: rgba(244, 242, 234, 0.38);
+  --dd-border: rgba(244, 242, 234, 0.13);
+  --dd-border-strong: rgba(244, 242, 234, 0.26);
+  --dd-teal: #1ba487;
+  --dd-teal-soft: rgba(27, 164, 135, 0.16);
+  --dd-amber: #db9a3e;
+  --dd-amber-soft: rgba(219, 154, 62, 0.16);
+  --dd-crimson: #d2635f;
+  --dd-crimson-soft: rgba(210, 99, 95, 0.16);
+  --dd-shadow: 0 12px 34px rgba(0, 0, 0, 0.5), 0 2px 10px rgba(0, 0, 0, 0.34);
+}
+
+html {
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--dd-bg);
+  color: var(--dd-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Theme sweep: the toggle runs a view transition and animates a circular
+   clip on the new snapshot, so the theme washes across the page from the
+   button instead of every element fading on its own timing. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 2147483646;
+}
+
+::selection {
+  background: var(--dd-teal-soft);
+}
+
+textarea::placeholder,
+input::placeholder {
+  color: var(--dd-ink-faint);
+}
+
+:focus-visible {
+  outline: 2px solid var(--dd-teal);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Design-system keyframes, referenced from inline animation styles. */
+@keyframes dd-fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes dd-card-in {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes dd-badge-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+@keyframes dd-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 var(--dd-teal-soft); }
+  50% { box-shadow: 0 0 0 5px var(--dd-teal-soft); }
+}
+@keyframes dd-march {
+  to { stroke-dashoffset: -32; }
+}
+@keyframes dd-sweep {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(360%); }
+}
+@keyframes dd-stamp {
+  0% { opacity: 0; transform: scale(1.5); }
+  62% { opacity: 1; transform: scale(0.97); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes dd-settle {
+  0%, 72% { transform: scale(1); }
+  86% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+@keyframes dd-toast-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes dd-timebar {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+@layer components {
+  .skeleton {
+    @apply animate-shimmer rounded-lg;
+    background-image: linear-gradient(
+      to right,
+      var(--dd-surface-2),
+      var(--dd-surface),
+      var(--dd-surface-2)
+    );
+    background-size: 200% 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
