@@ -22,18 +22,18 @@ export async function GET(request: Request) {
   }
 
   const scanId = url.searchParams.get("scanId");
-  const where = scanId ? "WHERE s.id = ?" : "";
+  const where = scanId ? "WHERE s.id = $1" : "";
   const params = scanId ? [Number(scanId)] : [];
 
-  const rows = getDb()
-    .prepare(
-      `SELECT s.id AS scanId, s.created_at AS createdAt, s.title, s.chars,
-              s.verdict, r.provider, r.score, r.label
-       FROM scans s JOIN results r ON r.scan_id = s.id
-       ${where}
-       ORDER BY s.created_at DESC, r.provider ASC`
-    )
-    .all(...params) as HistoryRow[];
+  const db = await getDb();
+  const rows = (await db.unsafe(
+    `SELECT s.id AS "scanId", s.created_at AS "createdAt", s.title, s.chars,
+            s.verdict, r.provider, r.score, r.label
+     FROM scans s JOIN results r ON r.scan_id = s.id
+     ${where}
+     ORDER BY s.created_at DESC, r.provider ASC`,
+    params
+  )) as unknown as HistoryRow[];
 
   const header = "date,title,provider,score,label,verdict,chars";
   const lines = rows.map((row) =>

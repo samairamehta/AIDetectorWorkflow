@@ -108,8 +108,8 @@ export const saplingProvider: DetectorProvider = {
   name: "Sapling",
   envVar: ENV_VAR,
 
-  isConfigured() {
-    return Boolean(resolveKey("sapling", ENV_VAR));
+  async isConfigured() {
+    return Boolean(await resolveKey("sapling", ENV_VAR));
   },
 
   async testKey(key: string): Promise<void> {
@@ -118,7 +118,7 @@ export const saplingProvider: DetectorProvider = {
   },
 
   async detect(text: string): Promise<DetectionResult> {
-    const key = resolveKey("sapling", ENV_VAR);
+    const key = await resolveKey("sapling", ENV_VAR);
     if (!key) {
       throw new ProviderError(
         "No Sapling key found. Add one in Settings or set SAPLING_API_KEY in .env.local.",

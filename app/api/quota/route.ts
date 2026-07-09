@@ -5,7 +5,7 @@ import type { QuotaResponse } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const quota = getQuota();
+  const quota = await getQuota();
   const response: QuotaResponse = quota;
   return NextResponse.json(response);
 }

@@ -83,8 +83,8 @@ export const gptzeroProvider: DetectorProvider = {
   name: "GPTZero",
   envVar: ENV_VAR,
 
-  isConfigured() {
-    return Boolean(resolveKey("gptzero", ENV_VAR));
+  async isConfigured() {
+    return Boolean(await resolveKey("gptzero", ENV_VAR));
   },
 
   async testKey(key: string): Promise<void> {
@@ -92,7 +92,7 @@ export const gptzeroProvider: DetectorProvider = {
   },
 
   async detect(text: string): Promise<DetectionResult> {
-    const key = resolveKey("gptzero", ENV_VAR);
+    const key = await resolveKey("gptzero", ENV_VAR);
     if (!key) {
       throw new ProviderError(
         "No GPTZero key found. Add one in Settings or set GPTZERO_API_KEY in .env.local.",

@@ -18,7 +18,7 @@ export interface DetectorProvider {
   name: string;
   // Env var this provider reads its key from (also the label shown in the UI).
   envVar: string;
-  isConfigured(): boolean;
+  isConfigured(): Promise<boolean>;
   detect(text: string): Promise<DetectionResult>;
   // Validate a candidate key with a small live request. Resolves on success,
   // throws a ProviderError on failure. Used by the "Add key" flow.

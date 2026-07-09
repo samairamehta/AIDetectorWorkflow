@@ -12,15 +12,15 @@ export interface QuotaState {
   nextReleaseAt: number | null;
 }
 
-export function getQuota(now = Date.now()): QuotaState {
-  const db = getDb();
+export async function getQuota(now = Date.now()): Promise<QuotaState> {
+  const db = await getDb();
   const since = now - WINDOW_MS;
-  const row = db
-    .prepare(
-      "SELECT COALESCE(SUM(chars), 0) AS used, MIN(created_at) AS oldest " +
-        "FROM usage_log WHERE created_at > ?"
-    )
-    .get(since) as { used: number; oldest: number | null };
+  const rows = await db.unsafe(
+    "SELECT COALESCE(SUM(chars), 0)::bigint AS used, MIN(created_at) AS oldest " +
+      "FROM usage_log WHERE created_at > $1",
+    [since]
+  );
+  const row = rows[0] as unknown as { used: number; oldest: number | null };
   const budget = dailyCharBudget();
   return {
     budget,
@@ -32,17 +32,19 @@ export function getQuota(now = Date.now()): QuotaState {
 
 // When would enough budget free up to fit `needed` chars?
 // Walks in-window usage oldest-first, accumulating released chars.
-export function whenBudgetFrees(needed: number, now = Date.now()): number | null {
-  const db = getDb();
+export async function whenBudgetFrees(
+  needed: number,
+  now = Date.now()
+): Promise<number | null> {
+  const db = await getDb();
   const since = now - WINDOW_MS;
-  const quota = getQuota(now);
+  const quota = await getQuota(now);
   if (needed <= quota.remaining) return now;
   if (needed > quota.budget) return null; // can never fit
-  const rows = db
-    .prepare(
-      "SELECT created_at, chars FROM usage_log WHERE created_at > ? ORDER BY created_at ASC"
-    )
-    .all(since) as { created_at: number; chars: number }[];
+  const rows = (await db.unsafe(
+    "SELECT created_at, chars FROM usage_log WHERE created_at > $1 ORDER BY created_at ASC",
+    [since]
+  )) as unknown as { created_at: number; chars: number }[];
   let freed = 0;
   for (const row of rows) {
     freed += row.chars;
@@ -51,8 +53,10 @@ export function whenBudgetFrees(needed: number, now = Date.now()): number | null
   return null;
 }
 
-export function logUsage(chars: number, now = Date.now()): void {
-  getDb()
-    .prepare("INSERT INTO usage_log (created_at, chars) VALUES (?, ?)")
-    .run(now, chars);
+export async function logUsage(chars: number, now = Date.now()): Promise<void> {
+  const db = await getDb();
+  await db.unsafe("INSERT INTO usage_log (created_at, chars) VALUES ($1, $2)", [
+    now,
+    chars,
+  ]);
 }

@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     return bad(message, 422);
   }
 
-  setStoredKey(provider.id, key);
+  await setStoredKey(provider.id, key);
   return NextResponse.json({ ok: true, id: provider.id });
 }
 
@@ -53,7 +53,7 @@ export async function PATCH(request: Request) {
   if (!provider) return bad("Unknown provider.");
   if (typeof body.enabled !== "boolean") return bad("`enabled` must be a boolean.");
 
-  setEnabled(provider.id, provider.envVar, body.enabled);
+  await setEnabled(provider.id, provider.envVar, body.enabled);
   return NextResponse.json({ ok: true });
 }
 
@@ -62,12 +62,12 @@ export async function DELETE(request: Request) {
   const id = new URL(request.url).searchParams.get("id");
   const provider = id ? providerById(id) : undefined;
   if (!provider) return bad("Unknown provider.");
-  if (keySource(provider.id, provider.envVar) === "env") {
+  if ((await keySource(provider.id, provider.envVar)) === "env") {
     return bad(
       `${provider.name} is configured through ${provider.envVar} in your env file. Remove it there instead.`,
       409
     );
   }
-  deleteStoredKey(provider.id);
+  await deleteStoredKey(provider.id);
   return NextResponse.json({ ok: true });
 }

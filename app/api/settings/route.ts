@@ -14,8 +14,8 @@ export async function POST(request: Request) {
   }
 
   if (body.passThreshold === null) {
-    clearPassThreshold();
-    return NextResponse.json({ passThreshold: getPassThreshold() });
+    await clearPassThreshold();
+    return NextResponse.json({ passThreshold: await getPassThreshold() });
   }
 
   const value = Number(body.passThreshold);
@@ -26,6 +26,6 @@ export async function POST(request: Request) {
     );
   }
 
-  setPassThreshold(value);
-  return NextResponse.json({ passThreshold: getPassThreshold() });
+  await setPassThreshold(value);
+  return NextResponse.json({ passThreshold: await getPassThreshold() });
 }

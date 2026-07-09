@@ -13,7 +13,18 @@
       "Bash(curl -s http://localhost:3000/api/status)",
       "Bash(gh repo *)",
       "Bash(echo \"=== EXIT: $? ===\")",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(curl -s -o /dev/null -w \"quota: %{http_code}\\\\n\" http://localhost:3000/api/quota)",
+      "Bash(npm uninstall *)",
+      "Bash(npm install *)",
+      "Bash(node -e \"console.log\\(require\\('@libsql/client/package.json'\\).version\\)\")",
+      "Bash(npx tsc *)",
+      "Bash(echo \"=== tsc exit: $? ===\")",
+      "Bash(node ./_dbtest.mjs)",
+      "Bash(curl -s -o /dev/null -w '%{http_code}\\\\n' https://mdusacdzoeqksprzihgu.supabase.co/rest/v1/ -H 'apikey: sb_publishable_Swp35KL_3Gpcpq8fevBfzQ_E-EO8jEu')",
+      "Bash(curl -s -w '\\\\nHTTP %{http_code}\\\\n' 'https://mdusacdzoeqksprzihgu.supabase.co/rest/v1/scans?select=id&limit=1' -H 'apikey: sb_publishable_Swp35KL_3Gpcpq8fevBfzQ_E-EO8jEu' -H 'Authorization: Bearer sb_publishable_Swp35KL_3Gpcpq8fevBfzQ_E-EO8jEu')",
+      "Bash(node -e \"import\\('postgres'\\).then\\(m=>console.log\\('postgres import OK, default:', typeof m.default\\)\\)\")",
+      "Read(//opt/homebrew/bin/**)"
     ]
   }
 }

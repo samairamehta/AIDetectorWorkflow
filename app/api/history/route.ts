@@ -36,41 +36,41 @@ export async function GET(request: Request) {
   const params: (string | number)[] = [];
 
   if (verdict === "PASS" || verdict === "FLAG") {
-    clauses.push("s.verdict = ?");
     params.push(verdict);
+    clauses.push(`s.verdict = $${params.length}`);
   }
   if (from) {
     const ts = Date.parse(from);
     if (!Number.isNaN(ts)) {
-      clauses.push("s.created_at >= ?");
       params.push(ts);
+      clauses.push(`s.created_at >= $${params.length}`);
     }
   }
   if (to) {
     const ts = Date.parse(to);
     if (!Number.isNaN(ts)) {
       // Include the whole end day.
-      clauses.push("s.created_at < ?");
       params.push(ts + 24 * 60 * 60 * 1000);
+      clauses.push(`s.created_at < $${params.length}`);
     }
   }
   if (q) {
-    clauses.push("s.title LIKE ?");
     params.push(`%${q}%`);
+    clauses.push(`s.title ILIKE $${params.length}`);
   }
 
   const where = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : "";
-  const dbRows = getDb()
-    .prepare(
-      `SELECT s.id AS scanId, s.created_at AS createdAt, s.title, s.chars,
-              s.verdict, r.provider, r.score, r.label,
-              r.sentence_scores AS sentenceScores
-       FROM scans s JOIN results r ON r.scan_id = s.id
-       ${where}
-       ORDER BY s.created_at DESC, r.provider ASC
-       LIMIT 2000`
-    )
-    .all(...params) as DbRow[];
+  const db = await getDb();
+  const dbRows = (await db.unsafe(
+    `SELECT s.id AS "scanId", s.created_at AS "createdAt", s.title, s.chars,
+            s.verdict, r.provider, r.score, r.label,
+            r.sentence_scores AS "sentenceScores"
+     FROM scans s JOIN results r ON r.scan_id = s.id
+     ${where}
+     ORDER BY s.created_at DESC, r.provider ASC
+     LIMIT 2000`,
+    params
+  )) as unknown as DbRow[];
 
   const rows: HistoryRow[] = dbRows.map(({ sentenceScores, ...row }) => ({
     ...row,
@@ -84,7 +84,8 @@ export async function GET(request: Request) {
 // DELETE /api/history clears all scans and results. The usage log is
 // kept on purpose, the quota must stay accurate to what Sapling saw.
 export async function DELETE() {
-  const db = getDb();
-  db.exec("DELETE FROM results; DELETE FROM scans;");
+  const db = await getDb();
+  // Deleting scans cascades to results (FK ON DELETE CASCADE).
+  await db.unsafe("DELETE FROM scans");
   return NextResponse.json({ ok: true });
 }

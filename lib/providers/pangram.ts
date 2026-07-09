@@ -102,8 +102,8 @@ export const pangramProvider: DetectorProvider = {
   name: "Pangram",
   envVar: ENV_VAR,
 
-  isConfigured() {
-    return Boolean(resolveKey("pangram", ENV_VAR));
+  async isConfigured() {
+    return Boolean(await resolveKey("pangram", ENV_VAR));
   },
 
   async testKey(key: string): Promise<void> {
@@ -111,7 +111,7 @@ export const pangramProvider: DetectorProvider = {
   },
 
   async detect(text: string): Promise<DetectionResult> {
-    const key = resolveKey("pangram", ENV_VAR);
+    const key = await resolveKey("pangram", ENV_VAR);
     if (!key) {
       throw new ProviderError(
         "No Pangram key found. Add one in Settings or set PANGRAM_API_KEY in .env.local.",

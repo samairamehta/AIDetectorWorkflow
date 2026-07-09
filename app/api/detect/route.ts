@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     }
   }
 
-  const providers = activeProviders();
+  const providers = await activeProviders();
   if (providers.length === 0) {
     return badRequest(
       "No detection provider is active. Add a key in Settings, or select at least one connected provider.",
@@ -49,9 +49,9 @@ export async function POST(request: Request) {
   // Budget check happens against the whole batch before any request is sent.
   const totalChars =
     body.texts.reduce((sum, t) => sum + t.content.length, 0) * providers.length;
-  const quota = getQuota();
+  const quota = await getQuota();
   if (totalChars > quota.remaining) {
-    const freesAt = whenBudgetFrees(totalChars);
+    const freesAt = await whenBudgetFrees(totalChars);
     const when =
       freesAt === null
         ? "This batch is larger than the whole daily budget, split it up."
@@ -62,8 +62,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const db = getDb();
-  const threshold = getPassThreshold();
+  const db = await getDb();
+  const threshold = await getPassThreshold();
   const results: ScanOutcome[] = [];
 
   for (const text of body.texts) {
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
     for (const provider of providers) {
       // Usage is logged per provider request, whether or not it succeeds,
       // since the provider still counts it against their quota.
-      logUsage(text.content.length);
+      await logUsage(text.content.length);
       try {
         const detection = await provider.detect(text.content);
         outcomes.push({
@@ -106,34 +106,29 @@ export async function POST(request: Request) {
       verdict = succeeded.every((o) => (o.score ?? 1) < threshold)
         ? "PASS"
         : "FLAG";
-      const insertScan = db.prepare(
-        "INSERT INTO scans (created_at, title, chars, verdict) VALUES (?, ?, ?, ?)"
-      );
-      const insertResult = db.prepare(
-        "INSERT INTO results (scan_id, provider, score, label, sentence_scores, raw) VALUES (?, ?, ?, ?, ?, ?)"
-      );
-      const persist = db.transaction(() => {
-        const info = insertScan.run(
-          Date.now(),
-          text.title || "Untitled",
-          text.content.length,
-          verdict
+      // begin() commits on success and rolls back if the callback throws.
+      scanId = await db.begin(async (tx) => {
+        const scanRows = await tx.unsafe(
+          "INSERT INTO scans (created_at, title, chars, verdict) VALUES ($1, $2, $3, $4) RETURNING id",
+          [Date.now(), text.title || "Untitled", text.content.length, verdict]
         );
-        const newScanId = Number(info.lastInsertRowid);
+        const newScanId = Number(scanRows[0].id);
         for (const o of succeeded) {
           const withRaw = o as ProviderOutcome & { raw?: unknown };
-          insertResult.run(
-            newScanId,
-            o.provider,
-            o.score,
-            o.label,
-            o.sentenceScores ? JSON.stringify(o.sentenceScores) : null,
-            withRaw.raw !== undefined ? JSON.stringify(withRaw.raw) : null
+          await tx.unsafe(
+            "INSERT INTO results (scan_id, provider, score, label, sentence_scores, raw) VALUES ($1, $2, $3, $4, $5, $6)",
+            [
+              newScanId,
+              o.provider,
+              o.score ?? null,
+              o.label ?? null,
+              o.sentenceScores ? JSON.stringify(o.sentenceScores) : null,
+              withRaw.raw !== undefined ? JSON.stringify(withRaw.raw) : null,
+            ]
           );
         }
         return newScanId;
       });
-      scanId = persist();
     }
 
     // Strip raw payloads from the API response, they live in SQLite.
@@ -154,6 +149,6 @@ export async function POST(request: Request) {
     });
   }
 
-  const response: DetectResponse = { results, quota: getQuota() };
+  const response: DetectResponse = { results, quota: await getQuota() };
   return NextResponse.json(response);
 }
