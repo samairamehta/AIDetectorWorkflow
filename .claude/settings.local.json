@@ -3,7 +3,17 @@
     "allow": [
       "Bash(sed -E 's/\\(SAPLING_API_KEY=.{4}\\).*/\\\\1****/' .env)",
       "Bash(node -e ' *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(lsof -iTCP:3000 -sTCP:LISTEN -n -P)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/api/quota)",
+      "Bash(curl -s http://localhost:3000/api/quota)",
+      "Bash(npx tsx *)",
+      "Read(//private/tmp/**)",
+      "Bash(npx --prefix /Users/samaira/Desktop/ai-detection-workflow-main tsx -e \"process.chdir\\('/tmp'\\); const {getQuota}=require\\('/Users/samaira/Desktop/ai-detection-workflow-main/lib/quota.ts'\\); try{console.log\\(getQuota\\(\\)\\)}catch\\(e\\){console.error\\('FULL ERROR:', e.message\\)}\")",
+      "Bash(curl -s http://localhost:3000/api/status)",
+      "Bash(gh repo *)",
+      "Bash(echo \"=== EXIT: $? ===\")",
+      "WebFetch(domain:github.com)"
     ]
   }
 }
